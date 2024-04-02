@@ -1,0 +1,47 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import App from './App';
+import axios from 'axios';
+
+jest.mock('axios');
+
+describe('Weather App', () => {
+  test('fetches and displays weather  for a city', async () => {
+    const data = {
+      name: 'Pune',
+      main: {
+        temp: 303
+      },
+    };
+    axios.get.mockResolvedValueOnce({ data });
+
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText('Enter city name'), {
+      target: { value: 'Pune' }
+    });
+
+    fireEvent.click(screen.getByText('Get Weather'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Pune')).toBeInTheDocument();
+      expect(screen.getByText('Temperature: 303 K')).toBeInTheDocument();
+    });
+  });
+
+  test('displays error message for invalid city', async () => {
+    axios.get.mockRejectedValueOnce(new Error('City not found'));
+
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText('Enter city name'), {
+      target: { value: 'InvalidCity' }
+    });
+
+    fireEvent.click(screen.getByText('Get Weather'));
+
+    await waitFor(() => {
+      expect(screen.getByText('City not found. Please try again.')).toBeInTheDocument();
+    });
+  });
+});
